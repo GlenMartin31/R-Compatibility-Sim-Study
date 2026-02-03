@@ -3,16 +3,7 @@
 # Author of code: Antonia D. Tsvetanova & Glen P. Martin
 
 # This is code for a simulation study presented in a manuscript entitled: 
-# Compatibility of missing data handling methods across validation and 
-# deployment of a Clinical Prediction Model
-# Authors:
-#   Antonia Tsvetanova
-#   Matthew Sperrin
-#   Niels Peek
-#   David Jenkins
-#   Iain Buchan
-#   Stephanie Hyland
-#   Glen P. Martin
+# Compatibility of missing data handling methods across stages of producing CPMs
 
 # ##############################################################################
 
@@ -27,14 +18,13 @@ simulation_nrun_fnc <- function(n_iter,
                                 R_prev,
                                 beta_x1_dev, 
                                 beta_x2_dev, 
-                                beta_U_dev, 
+                                beta_Y_dev, 
                                 beta_x1_val, 
                                 beta_x2_val, 
-                                beta_U_val, 
+                                beta_Y_val, 
                                 rho_X,
                                 gamma_x1, 
-                                gamma_x2, 
-                                gamma_U) {
+                                gamma_x2) {
   #Input: n_iter = the number of iterations to repeat the simulation over
   #       N_dev = size of the data to simulate as the development set
   #       N_val = size of the data to simulate as the validation set
@@ -45,22 +35,20 @@ simulation_nrun_fnc <- function(n_iter,
   #                     development dataset
   #       beta_x2_dev = association between X2 and prob of missing data in the
   #                     development dataset
-  #       beta_U_dev = association between U (unmeasured variable) and prob of 
-  #                     missing data in the development dataset
+  #       beta_Y_dev = association between Y and prob of missing data in the
+  #                     development dataset
   #       beta_x1_val = association between X1 and prob of missing data in the
   #                     validation dataset
   #       beta_x2_val = association between X2 and prob of missing data in the
   #                     validation dataset
-  #       beta_U_val = association between U (unmeasured variable) and prob of 
-  #                     missing data in the validation dataset
+  #       beta_Y_val = association between Y and prob of missing data in the
+  #                     validation dataset
   #       rho_X = the correlation between X1 and X2 - if X1 is categorical, the 
   #               inputted correlation is between the latent variable Z1 and 
   #               X2 where Z1 is then used to generate X1 at a set prevalence 
   #               (see paper for details)
   #       gamma_x1 = association between X1 and prob of outcome
   #       gamma_x2 = association between X2 and prob of outcome
-  #       gamma_U = association between U (unmeasured variable) and prob of 
-  #                 outcome
   
   library(MASS)
   library(tidyverse)
@@ -80,14 +68,13 @@ simulation_nrun_fnc <- function(n_iter,
                                                    R_prev  =R_prev,
                                                    beta_x1_dev = beta_x1_dev, 
                                                    beta_x2_dev = beta_x2_dev, 
-                                                   beta_U_dev = beta_U_dev, 
+                                                   beta_Y_dev = beta_Y_dev, 
                                                    beta_x1_val = beta_x1_val, 
                                                    beta_x2_val = beta_x2_val, 
-                                                   beta_U_val = beta_U_val, 
+                                                   beta_Y_val = beta_Y_val, 
                                                    rho_X = rho_X,
                                                    gamma_x1 = gamma_x1, 
-                                                   gamma_x2 = gamma_x2, 
-                                                   gamma_U = gamma_U)
+                                                   gamma_x2 = gamma_x2)
     
     results <- results %>%
       dplyr::bind_rows(tibble::as_tibble(simulation_results) %>% 
@@ -111,31 +98,29 @@ simulation_singlerun_fnc <- function(N_dev,
                                      R_prev,
                                      beta_x1_dev, 
                                      beta_x2_dev, 
-                                     beta_U_dev, 
+                                     beta_Y_dev, 
                                      beta_x1_val, 
                                      beta_x2_val, 
-                                     beta_U_val, 
+                                     beta_Y_val, 
                                      rho_X,
                                      gamma_x1, 
-                                     gamma_x2, 
-                                     gamma_U) {
+                                     gamma_x2) {
   
   # Generate the data according to the DGM--------------------------------------
   gen_data <- DGM_fnc(N_dev = N_dev,
                       N_val = N_val, 
                       Y_prev = Y_prev,
                       X_categorical = X_categorical, 
-                      R_prev  =R_prev,
+                      R_prev = R_prev,
                       beta_x1_dev = beta_x1_dev, 
                       beta_x2_dev = beta_x2_dev, 
-                      beta_U_dev = beta_U_dev, 
+                      beta_Y_dev = beta_Y_dev, 
                       beta_x1_val = beta_x1_val, 
                       beta_x2_val = beta_x2_val, 
-                      beta_U_val = beta_U_val, 
+                      beta_Y_val = beta_Y_val, 
                       rho_X = rho_X,
                       gamma_x1 = gamma_x1, 
-                      gamma_x2 = gamma_x2, 
-                      gamma_U = gamma_U) 
+                      gamma_x2 = gamma_x2) 
   
   # Impute missing data in the development and validation data under
   # different methods ----------------------------------------------------------
@@ -170,7 +155,8 @@ simulation_singlerun_fnc <- function(N_dev,
   
   #calculate predictive performance of each model in each imputed dataset:
   if(X_categorical){
-    CPM_names <- c("PR_fullyobserved",
+    CPM_names <- c("PR_DGM",
+                   "PR_fullyobserved",
                    "PR_CCA",
                    "PR_RI",
                    "PR_MInoY",
@@ -178,7 +164,8 @@ simulation_singlerun_fnc <- function(N_dev,
                    "PR_patternsubmodel",
                    "PR_zero")
   }else {
-    CPM_names <- c("PR_fullyobserved",
+    CPM_names <- c("PR_DGM",
+                   "PR_fullyobserved",
                    "PR_CCA",
                    "PR_RI",
                    "PR_MInoY",
@@ -222,53 +209,44 @@ DGM_fnc <- function(N_dev,
                     R_prev,
                     beta_x1_dev, 
                     beta_x2_dev, 
-                    beta_U_dev, 
+                    beta_Y_dev, 
                     beta_x1_val, 
                     beta_x2_val, 
-                    beta_U_val, 
+                    beta_Y_val, 
                     rho_X,
                     gamma_x1, 
-                    gamma_x2, 
-                    gamma_U) {
+                    gamma_x2) {
   
   N <- N_dev + N_val #total sample size to generate
   
   #generate (potentially correlated) latent predictor variables from a MVN:
   Z <- MASS::mvrnorm(n = N, mu = c(0,0), Sigma = toeplitz(c(1, rho_X)))
   
-  #generate an "unmeasured variable" U:
-  U <- rnorm(N, mean = 0, sd = 1)
-  
   if(X_categorical == FALSE) {
     #if continuous use the latent variables directly as X
     IPD <- tibble::tibble("ID" = 1:N,
                           "x_1" = Z[,1], 
-                          "x_2" = Z[,2], 
-                          "U" = U)
+                          "x_2" = Z[,2])
   } else{
     #if binary convert the latent variable to achieve binary variable prevalence
     IPD <- tibble::tibble("ID" = 1:N,
                           "x_1" = ifelse(Z[,1]>=qnorm(0.3, 
                                                       lower.tail = FALSE), 
                                          1, 0), 
-                          "x_2" = Z[,2], 
-                          "U" = U)
+                          "x_2" = Z[,2])
   }
   
   #calculate gamma_0 to give inputted prevalence of the outcome:
   gamma_0 <- as.numeric(coef(glm(rbinom(N, 1, prob = Y_prev) ~ 
                                    offset((gamma_x1*x_1) + 
-                                            (gamma_x2*x_2) + 
-                                            (gamma_U*U)), 
+                                            (gamma_x2*x_2)), 
                                  family = binomial(link = "logit"),
                                  data = IPD))[1])
   #simulate outcomes based on the data generating model:
+  IPD$Pi <- expit_fnc(gamma_0 + (gamma_x1*IPD$x_1) + (gamma_x2*IPD$x_2))
   IPD$Y <- rbinom(N, 
                   size = 1, 
-                  prob = expit_fnc(gamma_0 + 
-                                     (gamma_x1*IPD$x_1) + 
-                                     (gamma_x2*IPD$x_2) + 
-                                     (gamma_U*IPD$U)))
+                  prob = IPD$Pi)
   
   #separate IPD into development and validation data
   dev_IPD <- IPD %>% 
@@ -285,13 +263,13 @@ DGM_fnc <- function(N_dev,
   beta_0_dev <- as.numeric(coef(glm(rbinom(N_dev, 1, prob = R_prev) ~ 
                                       offset((beta_x1_dev*x_1) +
                                                (beta_x2_dev*x_2) +
-                                               (beta_U_dev*U)), 
+                                               (beta_Y_dev*Y)), 
                                 family = binomial(link = "logit"),
                                 data = dev_IPD))[1])
   beta_0_val <- as.numeric(coef(glm(rbinom(N_val, 1, prob = R_prev) ~ 
                                       offset((beta_x1_val*x_1) +
                                                (beta_x2_val*x_2) +
-                                               (beta_U_val*U)), 
+                                               (beta_Y_val*Y)), 
                                     family = binomial(link = "logit"),
                                     data = val_IPD))[1])
   
@@ -302,7 +280,7 @@ DGM_fnc <- function(N_dev,
                         prob = expit_fnc(beta_0_dev + 
                                            (beta_x1_dev*dev_IPD$x_1) + 
                                            (beta_x2_dev*dev_IPD$x_2) + 
-                                           (beta_U_dev*dev_IPD$U))) 
+                                           (beta_Y_dev*dev_IPD$Y))) 
   
   
   val_IPD$R_1 <- rbinom(N_val, 
@@ -310,7 +288,7 @@ DGM_fnc <- function(N_dev,
                         prob = expit_fnc(beta_0_val + 
                                            (beta_x1_val*val_IPD$x_1) + 
                                            (beta_x2_val*val_IPD$x_2) + 
-                                           (beta_U_val*val_IPD$U)))  
+                                           (beta_Y_val*val_IPD$Y)))  
   
   observed_dev_IPD <- dev_IPD %>%
     dplyr::mutate(x_1 = ifelse(R_1 == 1, x_1, NA))
@@ -474,8 +452,8 @@ mice_fnc <- function(df, m = 5, include_Y) {
   #we never want MI to impute the missing values based on ID, U or R1:
   predmat[,"ID"] <- 0 
   predmat["ID",] <- 0
-  predmat[,"U"] <- 0
-  predmat["U",] <- 0
+  predmat[,"Pi"] <- 0
+  predmat["Pi",] <- 0
   predmat[,"R_1"] <- 0
   predmat["R_1",] <- 0
   
@@ -502,8 +480,8 @@ regimputation_fnc <- function(df, X_categorical) {
   #we never want MI to impute the missing values based on ID, U or R1:
   predmat[,"ID"] <- 0 
   predmat["ID",] <- 0
-  predmat[,"U"] <- 0
-  predmat["U",] <- 0
+  predmat[,"Pi"] <- 0
+  predmat["Pi",] <- 0
   predmat[,"R_1"] <- 0
   predmat["R_1",] <- 0
   
@@ -662,7 +640,8 @@ make_predictions_fnc <- function(imputed_dataset,
   if(is.mids(imputed_dataset) == FALSE){ 
     
     output_predictions <- tibble::tibble("ID" = imputed_dataset$ID,
-                                         "Y" = imputed_dataset$Y)
+                                         "Y" = imputed_dataset$Y,
+                                         "PR_DGM" = imputed_dataset$Pi)
     
     if(any(is.na(imputed_dataset$x_1))) {
       #apply pattern submodel only - its the observed val data, so has 
@@ -726,7 +705,8 @@ make_predictions_fnc <- function(imputed_dataset,
     
     output_predictions <- tibble::tibble(".imp" = MI_long$.imp,
                                          "ID" = MI_long$ID,
-                                         "Y" = MI_long$Y)
+                                         "Y" = MI_long$Y,
+                                         "PR_DGM" = MI_long$Pi)
     
     #define the design matrix:
     DM <- model.matrix(~x_1 + x_2, MI_long)
