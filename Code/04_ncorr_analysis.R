@@ -843,10 +843,10 @@ Bootstrap_InternalValidation %>%
          name = forcats::fct_relevel(name,
                                      c("MeanMode", "RI", "MInoY", "PSM")),
          name = forcats::fct_recode(name,
-                                    "Targetting\n MI-no Y Performance" = "MInoY",
-                                    "Targetting\n Mean/Mode Performance" = "MeanMode",
-                                    "Targetting\n PSM Performance" = "PSM",
-                                    "Targetting\n RI Performance" = "RI"),
+                                    "E-MI" = "MInoY",
+                                    "E-mean" = "MeanMode",
+                                    "E-PSM" = "PSM",
+                                    "E-RI" = "RI"),
          
          CPM = str_remove(CPM, "PR_"),
          CPM = forcats::fct_recode(CPM,
@@ -884,7 +884,7 @@ Bootstrap_InternalValidation %>%
   geom_errorbar(aes(xmin = bias_lower, 
                     xmax = bias_upper), width=.1) +
   scale_color_brewer(palette = "Set1") +
-  xlab("Bias") +
+  xlab("Validation Performance - Deployment Performance") +
   ylab("Validation Data Imputation Method") +
   geom_vline(data = data.frame("Metric" = c("AUC",
                                             "Brier Score",
@@ -893,8 +893,7 @@ Bootstrap_InternalValidation %>%
                                "bias_mean" = c(0,0,0,0)),
              aes(xintercept = bias_mean),
              linetype = "dashed") +
-  ggh4x::facet_grid2(CPM ~ Target, scales = "fixed") +
-  ggtitle("Targetted Performance ") +
+  ggh4x::facet_grid2(Target ~ CPM, scales = "fixed") +
   theme_minimal(base_size = 12) +
   theme(legend.position = "bottom",
         panel.background = element_rect(fill = "gray90"),  
@@ -904,6 +903,5 @@ Bootstrap_InternalValidation %>%
         panel.border = element_rect(color = "black", fill = NA, linewidth = 0.5)) 
 
 ggsave(file = here::here("Manuscript", "Fig6.tiff"), 
-       height = 10, width = 10, 
        dpi = 300)
 
