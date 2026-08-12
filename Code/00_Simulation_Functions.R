@@ -12,37 +12,43 @@
 ####----------------------------------------------------------------------------
 simulation_nrun_fnc <- function(n_iter, 
                                 N_dev,
-                                N_val, 
+                                N_val,
+                                N_deployment,
                                 Y_prev,
                                 X_categorical, 
-                                R_prev,
+                                R_prev_dev,
+                                R_prev_deployment,
                                 beta_x1_dev, 
                                 beta_x2_dev, 
                                 beta_Y_dev, 
-                                beta_x1_val, 
-                                beta_x2_val, 
-                                beta_Y_val, 
+                                beta_x1_deployment, 
+                                beta_x2_deployment, 
+                                beta_Y_deployment, 
                                 rho_X,
                                 gamma_x1, 
                                 gamma_x2) {
   #Input: n_iter = the number of iterations to repeat the simulation over
   #       N_dev = size of the data to simulate as the development set
   #       N_val = size of the data to simulate as the validation set
+  #       N_deployment = size of the data to simulate as the deployment set
   #       Y_prev = the overall event rate in the population
   #       X_categorical = TRUE/FALSE whether X1 is simulated as categorical
-  #       R_prev = proportion of missing data induced
+  #       R_prev_dev = proportion of missing data induced in the development and 
+  #                     validation datasets
+  #       R_prev_deployment = proportion of missing data induced in the 
+  #                     deployment dataset
   #       beta_x1_dev = association between X1 and prob of missing data in the
   #                     development dataset
   #       beta_x2_dev = association between X2 and prob of missing data in the
   #                     development dataset
   #       beta_Y_dev = association between Y and prob of missing data in the
   #                     development dataset
-  #       beta_x1_val = association between X1 and prob of missing data in the
-  #                     validation dataset
-  #       beta_x2_val = association between X2 and prob of missing data in the
-  #                     validation dataset
-  #       beta_Y_val = association between Y and prob of missing data in the
-  #                     validation dataset
+  #       beta_x1_deployment = association between X1 and prob of missing data 
+  #                     in the deployment dataset
+  #       beta_x2_deployment = association between X2 and prob of missing data 
+  #                     in the deployment dataset
+  #       beta_Y_deployment = association between Y and prob of missing data 
+  #                     in the deployment dataset
   #       rho_X = the correlation between X1 and X2 - if X1 is categorical, the 
   #               inputted correlation is between the latent variable Z1 and 
   #               X2 where Z1 is then used to generate X1 at a set prevalence 
@@ -63,15 +69,17 @@ simulation_nrun_fnc <- function(n_iter,
   for (iter in 1:n_iter) {
     simulation_results <- simulation_singlerun_fnc(N_dev = N_dev,
                                                    N_val = N_val, 
+                                                   N_deployment = N_deployment,
                                                    Y_prev = Y_prev,
                                                    X_categorical = X_categorical, 
-                                                   R_prev  =R_prev,
+                                                   R_prev_dev = R_prev_dev,
+                                                   R_prev_deployment = R_prev_deployment,
                                                    beta_x1_dev = beta_x1_dev, 
                                                    beta_x2_dev = beta_x2_dev, 
                                                    beta_Y_dev = beta_Y_dev, 
-                                                   beta_x1_val = beta_x1_val, 
-                                                   beta_x2_val = beta_x2_val, 
-                                                   beta_Y_val = beta_Y_val, 
+                                                   beta_x1_deployment = beta_x1_deployment, 
+                                                   beta_x2_deployment = beta_x2_deployment, 
+                                                   beta_Y_deployment = beta_Y_deployment, 
                                                    rho_X = rho_X,
                                                    gamma_x1 = gamma_x1, 
                                                    gamma_x2 = gamma_x2)
@@ -93,15 +101,17 @@ simulation_nrun_fnc <- function(n_iter,
 ####----------------------------------------------------------------------------
 simulation_singlerun_fnc <- function(N_dev,
                                      N_val, 
+                                     N_deployment,
                                      Y_prev,
                                      X_categorical, 
-                                     R_prev,
+                                     R_prev_dev,
+                                     R_prev_deployment,
                                      beta_x1_dev, 
                                      beta_x2_dev, 
                                      beta_Y_dev, 
-                                     beta_x1_val, 
-                                     beta_x2_val, 
-                                     beta_Y_val, 
+                                     beta_x1_deployment, 
+                                     beta_x2_deployment, 
+                                     beta_Y_deployment, 
                                      rho_X,
                                      gamma_x1, 
                                      gamma_x2) {
@@ -109,15 +119,17 @@ simulation_singlerun_fnc <- function(N_dev,
   # Generate the data according to the DGM--------------------------------------
   gen_data <- DGM_fnc(N_dev = N_dev,
                       N_val = N_val, 
+                      N_deployment = N_deployment,
                       Y_prev = Y_prev,
                       X_categorical = X_categorical, 
-                      R_prev = R_prev,
+                      R_prev_dev = R_prev_dev,
+                      R_prev_deployment = R_prev_deployment,
                       beta_x1_dev = beta_x1_dev, 
                       beta_x2_dev = beta_x2_dev, 
                       beta_Y_dev = beta_Y_dev, 
-                      beta_x1_val = beta_x1_val, 
-                      beta_x2_val = beta_x2_val, 
-                      beta_Y_val = beta_Y_val, 
+                      beta_x1_deployment = beta_x1_deployment, 
+                      beta_x2_deployment = beta_x2_deployment, 
+                      beta_Y_deployment = beta_Y_deployment, 
                       rho_X = rho_X,
                       gamma_x1 = gamma_x1, 
                       gamma_x2 = gamma_x2) 
@@ -125,7 +137,7 @@ simulation_singlerun_fnc <- function(N_dev,
   # Impute missing data in the development and validation data under
   # different methods ----------------------------------------------------------
   imputed_datasets <- imputation_fnc(df = gen_data, 
-                                     m = 5,
+                                     m = 10,
                                      X_categorical = X_categorical)
   
   
@@ -136,22 +148,34 @@ simulation_singlerun_fnc <- function(N_dev,
   
  
   # Apply the models (from the development data) to the imputed validation
-  # data under each different imputation methods, and estimate
-  # predictive performance -----------------------------------------------------
-  
-  #extract each imputed version of the validation set
+  # data under each different imputation methods--------------------------------
   val_imputed_datasets <- imputed_datasets[
     which(stringr::str_detect(names(imputed_datasets), "_val"))
     ]
   
-  preds_per_data_set <- purrr::map(.x = val_imputed_datasets,
-                                   .f = make_predictions_fnc,
-                                   model_coefs = model_coefs,
-                                   X_categorical = X_categorical)
-  preds_per_data_set$RI_val_transportedimputation <- preds_per_data_set$RI_val_transportedimputation %>%
+  deployment_imputed_datasets <- imputed_datasets[
+    which(stringr::str_detect(names(imputed_datasets), "_deployment"))
+  ]
+  
+  val_preds_per_data_set <- purrr::map(.x = val_imputed_datasets,
+                                       .f = make_predictions_fnc,
+                                       model_coefs = model_coefs,
+                                       X_categorical = X_categorical)
+  val_preds_per_data_set$RI_val_transportedimputation <- val_preds_per_data_set$RI_val_transportedimputation %>%
     dplyr::select(-.imp)
-  preds_per_data_set$RI_val_newimputation <- preds_per_data_set$RI_val_newimputation %>%
+  val_preds_per_data_set$RI_val_newimputation <- val_preds_per_data_set$RI_val_newimputation %>%
     dplyr::select(-.imp)
+  
+  
+  deployment_preds_per_data_set <- purrr::map(.x = deployment_imputed_datasets,
+                                              .f = make_predictions_fnc,
+                                              model_coefs = model_coefs,
+                                              X_categorical = X_categorical)
+  deployment_preds_per_data_set$RI_deployment_transportedimputation <- deployment_preds_per_data_set$RI_deployment_transportedimputation %>%
+    dplyr::select(-.imp)
+  deployment_preds_per_data_set$RI_deployment_newimputation <- deployment_preds_per_data_set$RI_deployment_newimputation %>%
+    dplyr::select(-.imp)
+  
   
   #calculate predictive performance of each model in each imputed dataset:
   if(X_categorical){
@@ -174,25 +198,53 @@ simulation_singlerun_fnc <- function(N_dev,
                    "PR_mean")
   }
   
-  Target_measures <- NULL
-  #Apply each developed CPM to every imputed validation dataset:
+  Target_measures_val <- NULL
+  Target_measures_deployment <- NULL
+  #Test each developed CPM within every imputed validation and deployment dataset:
   for(i in 1:length(CPM_names)) {
-    Target_measures <- Target_measures %>%
-      dplyr::bind_rows(purrr::map_dfr(.x = preds_per_data_set[-which(names(preds_per_data_set)=="observed_val")],
+    Target_measures_val <- Target_measures_val %>%
+      dplyr::bind_rows(purrr::map_dfr(.x = val_preds_per_data_set[-which(names(val_preds_per_data_set)=="observed_val")],
                                       .f = validation_fnc,
                                       PR_name = CPM_names[i],
                                       .id = "Validation_Dataset") %>%
                          dplyr::mutate("CPM" = CPM_names[i],
                                        .before = "Validation_Dataset"))
+    
+    Target_measures_deployment <- Target_measures_deployment %>%
+      dplyr::bind_rows(purrr::map_dfr(.x = deployment_preds_per_data_set[-which(names(deployment_preds_per_data_set)=="observed_deployment")],
+                                      .f = validation_fnc,
+                                      PR_name = CPM_names[i],
+                                      .id = "Deployment_Dataset") %>%
+                         dplyr::mutate("CPM" = CPM_names[i],
+                                       .before = "Deployment_Dataset"))
   }
-  #Apply the sub-model to the raw (non-imputed) validation data:
-  Target_measures <- Target_measures %>%
-    dplyr::bind_rows(purrr::map_dfr(.x = preds_per_data_set[which(names(preds_per_data_set)=="observed_val")],
+  #Test the performance of pattern the sub-model in raw (non-imputed) validation data:
+  Target_measures_val <- Target_measures_val %>%
+    dplyr::bind_rows(purrr::map_dfr(.x = val_preds_per_data_set[which(names(val_preds_per_data_set)=="observed_val")],
                                     .f = validation_fnc,
                                     PR_name = "PR_patternsubmodel",
                                     .id = "Validation_Dataset") %>%
                        dplyr::mutate("CPM" = "PR_patternsubmodel",
                                      .before = "Validation_Dataset"))
+  #Test the performance of pattern the sub-model in raw (non-imputed) deployment data:
+  Target_measures_deployment <- Target_measures_deployment %>%
+    dplyr::bind_rows(purrr::map_dfr(.x = deployment_preds_per_data_set[which(names(deployment_preds_per_data_set)=="observed_deployment")],
+                                    .f = validation_fnc,
+                                    PR_name = "PR_patternsubmodel",
+                                    .id = "Deployment_Dataset") %>%
+                       dplyr::mutate("CPM" = "PR_patternsubmodel",
+                                     .before = "Deployment_Dataset"))
+  
+  #combine
+  Target_measures <- Target_measures_val %>%
+    dplyr::mutate(Validation_Dataset = stringr::str_remove(Validation_Dataset, "_val")) %>%
+    dplyr::rename_with(~paste0(., "_validationperfm"), CalInt_est:Brier_var) %>%
+    dplyr::left_join(Target_measures_deployment %>%
+                       dplyr::mutate(Deployment_Dataset = stringr::str_remove(Deployment_Dataset, "_deployment")) %>%
+                       dplyr::rename_with(~paste0(., "_deploymentperfm"), CalInt_est:Brier_var) %>%
+                       dplyr::rename(Validation_Dataset = Deployment_Dataset),
+                     by = c("CPM", "Validation_Dataset")) %>%
+    dplyr::rename("ImputationMethod" = Validation_Dataset)
   
   Target_measures
 } 
@@ -204,20 +256,22 @@ simulation_singlerun_fnc <- function(N_dev,
 ####----------------------------------------------------------------------------
 DGM_fnc <- function(N_dev,
                     N_val, 
+                    N_deployment,
                     Y_prev,
                     X_categorical, 
-                    R_prev,
+                    R_prev_dev,
+                    R_prev_deployment,
                     beta_x1_dev, 
                     beta_x2_dev, 
                     beta_Y_dev, 
-                    beta_x1_val, 
-                    beta_x2_val, 
-                    beta_Y_val, 
+                    beta_x1_deployment, 
+                    beta_x2_deployment, 
+                    beta_Y_deployment, 
                     rho_X,
                     gamma_x1, 
                     gamma_x2) {
   
-  N <- N_dev + N_val #total sample size to generate
+  N <- N_dev + N_val + N_deployment #total sample size to generate
   
   #generate (potentially correlated) latent predictor variables from a MVN:
   Z <- MASS::mvrnorm(n = N, mu = c(0,0), Sigma = toeplitz(c(1, rho_X)))
@@ -248,33 +302,49 @@ DGM_fnc <- function(N_dev,
                   size = 1, 
                   prob = IPD$Pi)
   
-  #separate IPD into development and validation data
-  dev_IPD <- IPD %>% 
-    dplyr::slice_sample(n = N_dev, replace = FALSE)
-  val_IPD <- IPD %>% 
-    dplyr::filter(ID %in% dev_IPD$ID == FALSE)
-  if((nrow(dev_IPD) + nrow(val_IPD) != N) |
-     (all(IPD$ID %in% c(dev_IPD$ID, val_IPD$ID)) == FALSE)) {
+  #separate IPD into development/validation and deployment datasets
+  dev_and_val_IPD <- IPD %>% 
+    dplyr::slice_sample(n = N_dev + N_val, replace = FALSE)
+  deployment_IPD <- IPD %>% 
+    dplyr::filter(ID %in% dev_and_val_IPD$ID == FALSE)
+
+  if((nrow(dev_and_val_IPD) + nrow(deployment_IPD) != N) |
+     (all(IPD$ID %in% c(dev_and_val_IPD$ID, deployment_IPD$ID)) == FALSE)) {
     stop("Error in DGM data sampling")
   }
   
-  #calculate beta_0_dev and beta_0_val to give inputted prevalence of 
-  #missing data:
-  beta_0_dev <- as.numeric(coef(glm(rbinom(N_dev, 1, prob = R_prev) ~ 
+  #calculate beta_0_dev and beta_0_deployment to give inputted prevalence of 
+  #missing data in each dataset:
+  beta_0_dev <- as.numeric(coef(glm(rbinom((N_dev+N_val), 1, 
+                                           prob = R_prev_dev) ~ 
                                       offset((beta_x1_dev*x_1) +
                                                (beta_x2_dev*x_2) +
                                                (beta_Y_dev*Y)), 
-                                family = binomial(link = "logit"),
-                                data = dev_IPD))[1])
-  beta_0_val <- as.numeric(coef(glm(rbinom(N_val, 1, prob = R_prev) ~ 
-                                      offset((beta_x1_val*x_1) +
-                                               (beta_x2_val*x_2) +
-                                               (beta_Y_val*Y)), 
                                     family = binomial(link = "logit"),
-                                    data = val_IPD))[1])
+                                    data = dev_and_val_IPD))[1])
+  beta_0_deployment <- as.numeric(coef(glm(rbinom(N_deployment, 1, 
+                                                  prob = R_prev_deployment) ~ 
+                                             offset((beta_x1_deployment*x_1) +
+                                                      (beta_x2_deployment*x_2) +
+                                                      (beta_Y_deployment*Y)), 
+                                           family = binomial(link = "logit"),
+                                           data = deployment_IPD))[1])
   
-  ##Induce missing data into development and validation data based on 
-  ##missingness mechanism:
+  #Split the dev/val data into two sets
+  dev_IPD <- dev_and_val_IPD %>%
+    dplyr::slice_sample(n = N_dev, replace = FALSE)
+  val_IPD <- dev_and_val_IPD %>%
+    dplyr::filter(ID %in% dev_IPD$ID == FALSE)
+  rm(dev_and_val_IPD)
+  if((nrow(dev_IPD) + nrow(val_IPD) + nrow(deployment_IPD) != N) |
+     (all(IPD$ID %in% c(dev_IPD$ID, val_IPD$ID, deployment_IPD$ID)) == FALSE)) {
+    stop("Error in DGM data sampling")
+  }
+  
+  ##Induce missing data into development, validation and deployment data based
+  ##on missingness mechanism and proportion (development and validation always
+  ##have identical missingness mechanism and proportion, but this might be
+  ##different to the mechanism in the deployment dataset):
   dev_IPD$R_1 <- rbinom(N_dev, 
                         size = 1, 
                         prob = expit_fnc(beta_0_dev + 
@@ -282,13 +352,20 @@ DGM_fnc <- function(N_dev,
                                            (beta_x2_dev*dev_IPD$x_2) + 
                                            (beta_Y_dev*dev_IPD$Y))) 
   
-  
   val_IPD$R_1 <- rbinom(N_val, 
                         size = 1, 
-                        prob = expit_fnc(beta_0_val + 
-                                           (beta_x1_val*val_IPD$x_1) + 
-                                           (beta_x2_val*val_IPD$x_2) + 
-                                           (beta_Y_val*val_IPD$Y)))  
+                        prob = expit_fnc(beta_0_dev + 
+                                           (beta_x1_dev*val_IPD$x_1) + 
+                                           (beta_x2_dev*val_IPD$x_2) + 
+                                           (beta_Y_dev*val_IPD$Y))) 
+  
+  
+  deployment_IPD$R_1 <- rbinom(N_deployment,
+                               size = 1, 
+                               prob = expit_fnc(beta_0_deployment + 
+                                                  (beta_x1_deployment*deployment_IPD$x_1) + 
+                                                  (beta_x2_deployment*deployment_IPD$x_2) + 
+                                                  (beta_Y_deployment*deployment_IPD$Y)))  
   
   observed_dev_IPD <- dev_IPD %>%
     dplyr::mutate(x_1 = ifelse(R_1 == 1, x_1, NA))
@@ -296,10 +373,15 @@ DGM_fnc <- function(N_dev,
   observed_val_IPD <- val_IPD %>%
     dplyr::mutate(x_1 = ifelse(R_1 == 1, x_1, NA))
   
+  observed_deployment_IPD <- deployment_IPD %>%
+    dplyr::mutate(x_1 = ifelse(R_1 == 1, x_1, NA))
+  
   return(list("fully_observed_dev_data" = dev_IPD, 
               "fully_observed_val_data" = val_IPD,
+              "fully_observed_deployment_data" = deployment_IPD,
               "observed_dev_data" = observed_dev_IPD, 
-              "observed_val_data" = observed_val_IPD))
+              "observed_val_data" = observed_val_IPD,
+              "observed_deployment_data" = observed_deployment_IPD))
 }
 
 ####----------------------------------------------------------------------------
@@ -313,7 +395,7 @@ expit_fnc <- function(x) {
 ####----------------------------------------------------------------------------
 ## Master imputation function
 ####----------------------------------------------------------------------------
-imputation_fnc <- function(df, m = 5, X_categorical) {
+imputation_fnc <- function(df, m = 50, X_categorical) {
   # Inputs: df = a list of data.frames generated from the DGM_fnc() function
   #         m = number of multiple imputed datasets to generate
   #         X_categorical = TRUE/FALSE whether X1 is simulated as categorical
@@ -323,6 +405,7 @@ imputation_fnc <- function(df, m = 5, X_categorical) {
   ##
   CCA_dev <- df$observed_dev_data[complete.cases(df$observed_dev_data), ]
   CCA_val <- df$observed_val_data[complete.cases(df$observed_val_data), ]
+  CCA_deployment <- df$observed_deployment_data[complete.cases(df$observed_deployment_data), ]
   
   
   ##
@@ -335,10 +418,16 @@ imputation_fnc <- function(df, m = 5, X_categorical) {
   RI_val_transportedimputation <- mice::mice.mids(RI_dev, 
                                                   newdata = df$observed_val_data,
                                                   print = F)
+  #take the RI models fit in development and apply them to the deployment set:
+  RI_deployment_transportedimputation <- mice::mice.mids(RI_dev, 
+                                                         newdata = df$observed_deployment_data,
+                                                         print = F)
   
-  #for comparison, also refit the RI models in the validation set:
+  #for comparison, also refit the RI models in the validation and deployment sets:
   RI_val_newimputation <- regimputation_fnc(df$observed_val_data,
                                             X_categorical = X_categorical) 
+  RI_deployment_newimputation <- regimputation_fnc(df$observed_deployment_data,
+                                                   X_categorical = X_categorical) 
   
   
   ##
@@ -346,11 +435,13 @@ imputation_fnc <- function(df, m = 5, X_categorical) {
   ##
   MI_dev_noY <- mice_fnc(df$observed_dev_data,
                          m = m, 
-                         include_Y = FALSE) 
+                         include_Y = FALSE,
+                         X_categorical = X_categorical) 
   
   MI_dev_withY <- mice_fnc(df$observed_dev_data, 
                            m = m, 
-                           include_Y = TRUE) 
+                           include_Y = TRUE,
+                           X_categorical = X_categorical) 
   
   #take the MI models fit in development and apply them to the validation set:
   MI_val_noY_transportedimputation <- mice::mice.mids(MI_dev_noY, 
@@ -359,15 +450,35 @@ imputation_fnc <- function(df, m = 5, X_categorical) {
   MI_val_withY_transportedimputation <- mice::mice.mids(MI_dev_withY, 
                                                         newdata = df$observed_val_data,
                                                         print = F)
+  #take the MI models fit in development and apply them to the deployment set:
+  MI_deployment_noY_transportedimputation <- mice::mice.mids(MI_dev_noY, 
+                                                             newdata = df$observed_deployment_data,
+                                                             print = F)
+  MI_deployment_withY_transportedimputation <- mice::mice.mids(MI_dev_withY, 
+                                                               newdata = df$observed_deployment_data,
+                                                               print = F)
   
-  #for comparison, also refit the MI models in the validation set:
+  #for comparison, also refit the MI models in the validation and deployment sets:
   MI_val_noY_newimputation <- mice_fnc(df$observed_val_data,
                                        m = m, 
-                                       include_Y = FALSE) 
+                                       include_Y = FALSE,
+                                       X_categorical = X_categorical) 
   
   MI_val_withY_newimputation <- mice_fnc(df$observed_val_data,
                                          m = m, 
-                                         include_Y = TRUE) 
+                                         include_Y = TRUE,
+                                         X_categorical = X_categorical) 
+  
+  
+  MI_deployment_noY_newimputation <- mice_fnc(df$observed_deployment_data,
+                                              m = m, 
+                                              include_Y = FALSE,
+                                              X_categorical = X_categorical) 
+  
+  MI_deployment_withY_newimputation <- mice_fnc(df$observed_deployment_data,
+                                                m = m, 
+                                                include_Y = TRUE,
+                                                X_categorical = X_categorical) 
   
   
   ##
@@ -381,24 +492,37 @@ imputation_fnc <- function(df, m = 5, X_categorical) {
     zero_val <- df$observed_val_data
     zero_val$x_1[is.na(zero_val$x_1)] <- 0
     
+    zero_deployment <- df$observed_deployment_data
+    zero_deployment$x_1[is.na(zero_deployment$x_1)] <- 0
+    
     return(list(
       "CCA_dev" = CCA_dev,
       "CCA_val" = CCA_val,
+      "CCA_deployment" = CCA_deployment,
       "RI_dev" = RI_dev,
       "RI_val_transportedimputation" = RI_val_transportedimputation,
+      "RI_deployment_transportedimputation" = RI_deployment_transportedimputation,
       "RI_val_newimputation" = RI_val_newimputation,
+      "RI_deployment_newimputation" = RI_deployment_newimputation,
       "MI_dev_noY" = MI_dev_noY,
       "MI_dev_withY" = MI_dev_withY,
       "MI_val_noY_transportedimputation" = MI_val_noY_transportedimputation,
+      "MI_deployment_noY_transportedimputation" = MI_deployment_noY_transportedimputation,
       "MI_val_withY_transportedimputation" = MI_val_withY_transportedimputation,
+      "MI_deployment_withY_transportedimputation" = MI_deployment_withY_transportedimputation,
       "MI_val_noY_newimputation" = MI_val_noY_newimputation,
+      "MI_deployment_noY_newimputation" = MI_deployment_noY_newimputation,
       "MI_val_withY_newimputation" = MI_val_withY_newimputation,
+      "MI_deployment_withY_newimputation" = MI_deployment_withY_newimputation,
       "zero_dev" = zero_dev,
       "zero_val" = zero_val,
+      "zero_deployment" = zero_deployment,
       "fullyobserved_dev" = df$fully_observed_dev_data,
       "fullyobserved_val" = df$fully_observed_val_data,
+      "fullyobserved_deployment" = df$fully_observed_deployment_data,
       "observed_dev" = df$observed_dev_data,
-      "observed_val" = df$observed_val_data
+      "observed_val" = df$observed_val_data,
+      "observed_deployment" = df$observed_deployment_data
     ))
     
   } else {
@@ -412,24 +536,39 @@ imputation_fnc <- function(df, m = 5, X_categorical) {
     mean_val$x_1[is.na(mean_val$x_1)] <- mean(df$observed_dev_data$x_1, 
                                               na.rm = TRUE)
     
+    mean_deployment <- df$observed_deployment_data
+    #take the mean value of x_1 from the dev data to apply to val data:
+    mean_deployment$x_1[is.na(mean_deployment$x_1)] <- mean(df$observed_dev_data$x_1, 
+                                                            na.rm = TRUE)
+    
     return(list(
       "CCA_dev" = CCA_dev,
       "CCA_val" = CCA_val,
+      "CCA_deployment" = CCA_deployment,
       "RI_dev" = RI_dev,
       "RI_val_transportedimputation" = RI_val_transportedimputation,
+      "RI_deployment_transportedimputation" = RI_deployment_transportedimputation,
       "RI_val_newimputation" = RI_val_newimputation,
+      "RI_deployment_newimputation" = RI_deployment_newimputation,
       "MI_dev_noY" = MI_dev_noY,
       "MI_dev_withY" = MI_dev_withY,
       "MI_val_noY_transportedimputation" = MI_val_noY_transportedimputation,
+      "MI_deployment_noY_transportedimputation" = MI_deployment_noY_transportedimputation,
       "MI_val_withY_transportedimputation" = MI_val_withY_transportedimputation,
+      "MI_deployment_withY_transportedimputation" = MI_deployment_withY_transportedimputation,
       "MI_val_noY_newimputation" = MI_val_noY_newimputation,
+      "MI_deployment_noY_newimputation" = MI_deployment_noY_newimputation,
       "MI_val_withY_newimputation" = MI_val_withY_newimputation,
+      "MI_deployment_withY_newimputation" = MI_deployment_withY_newimputation,
       "mean_dev" = mean_dev,
       "mean_val" = mean_val,
+      "mean_deployment" = mean_deployment,
       "fullyobserved_dev" = df$fully_observed_dev_data,
       "fullyobserved_val" = df$fully_observed_val_data,
+      "fullyobserved_deployment" = df$fully_observed_deployment_data,
       "observed_dev" = df$observed_dev_data,
-      "observed_val" = df$observed_val_data
+      "observed_val" = df$observed_val_data,
+      "observed_deployment" = df$observed_deployment_data
     ))
   }
 } 
@@ -437,11 +576,12 @@ imputation_fnc <- function(df, m = 5, X_categorical) {
 ####----------------------------------------------------------------------------
 ## Multiple imputation function
 ####----------------------------------------------------------------------------
-mice_fnc <- function(df, m = 5, include_Y) {
+mice_fnc <- function(df, m = 10, include_Y, X_categorical) {
   # Inputs: df = one of the data.frames generated from the DGM_fnc() function
   #         m = number of multiple imputed datasets to generate
   #         include_Y = TRUE/FALSE whether to include the outcome, Y, in 
   #                     the mice procedure
+  #         X_categorical = TRUE/FALSE whether X1 is simulated as categorical
   
   dummyrun <- mice::mice(df, m = m, maxit = 0) 
   predmat <- dummyrun$predictorMatrix 
@@ -457,13 +597,32 @@ mice_fnc <- function(df, m = 5, include_Y) {
   predmat[,"R_1"] <- 0
   predmat["R_1",] <- 0
   
-  #only imputing one variable, so dont need many iterations for convergence:
-  mice::mice(df, 
-             method = "norm",
-             m, 
-             maxit = 10, 
-             predictorMatrix = predmat, 
-             printFlag = FALSE) 
+  method_vec <- dummyrun$method
+  if(X_categorical){
+    method_vec["x_1"] <- "logreg"
+    df$x_1 <- factor(df$x_1, levels = c(0,1)) #convert to factor for mice()
+    #only imputing one variable, so dont need many iterations for convergence:
+    MI_imp <- mice::mice(df, 
+                         method = method_vec,
+                         m, 
+                         maxit = 20, 
+                         predictorMatrix = predmat, 
+                         printFlag = FALSE) 
+    
+    #undo factor conversion post mice():
+    long_dat <- complete(MI_imp, action = "long", include = TRUE)
+    long_dat$x_1 <- as.numeric(levels(long_dat$x_1))[long_dat$x_1]
+    mice::as.mids(long_dat)
+  } else{
+    method_vec["x_1"] <- "norm"
+    #only imputing one variable, so dont need many iterations for convergence:
+    mice::mice(df, 
+               method = method_vec,
+               m, 
+               maxit = 20, 
+               predictorMatrix = predmat, 
+               printFlag = FALSE) 
+  }
 }
 
 ####----------------------------------------------------------------------------
@@ -493,7 +652,7 @@ regimputation_fnc <- function(df, X_categorical) {
     RI_imp <- mice::mice(df, 
                          method = "logreg", 
                          m = 1, 
-                         maxit = 1, 
+                         maxit = 20, 
                          predictorMatrix = predmat, 
                          printFlag = FALSE) 
     #undo factor conversion post mice():
@@ -508,7 +667,7 @@ regimputation_fnc <- function(df, X_categorical) {
     mice::mice(df, 
                method = "norm.predict", 
                m = 1, 
-               maxit = 1, 
+               maxit = 1, #only requires 1 iteration for RI case with continuous variable
                predictorMatrix = predmat, 
                printFlag = FALSE) 
   }

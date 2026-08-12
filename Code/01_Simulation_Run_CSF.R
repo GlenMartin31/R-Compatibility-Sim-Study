@@ -21,13 +21,14 @@ library(tidyverse)
 sims_parameters <- tidyr::crossing(
   Y_prev = c(0.2),
   X_categorical = c(TRUE, FALSE), 
-  R_prev = c(0.9, 0.8, 0.5), #10%, 20% and 50% missingness, respectively
+  R_prev_dev = c(0.9, 0.8, 0.5), #10%, 20% and 50% missingness, respectively
+  R_prev_deployment = c(0.9, 0.8, 0.5), #10%, 20% and 50% missingness, respectively
   beta_x1_dev = c(0, 0.5), 
   beta_x2_dev = c(0, 0.5), 
   beta_Y_dev = c(0, 0.5),  
-  beta_x1_val = c(0, 0.5), 
-  beta_x2_val = c(0, 0.5), 
-  beta_Y_val = c(0, 0.5),  
+  beta_x1_deployment = c(0, 0.5), 
+  beta_x2_deployment = c(0, 0.5), 
+  beta_Y_deployment = c(0, 0.5),  
   rho_X = c(0, 0.75),
   gamma_x1 = c(0, 0.5), 
   gamma_x2 = 0.5
@@ -40,18 +41,16 @@ sims_parameters <- tidyr::crossing(
     beta_x1_dev != 0 & beta_x2_dev != 0 & beta_Y_dev != 0 ~ "DAG_f_dev",
     TRUE ~ as.character("not_applicable")
   ),
-  beta_cases_val = dplyr::case_when(
-    beta_x1_val == 0 & beta_x2_val == 0 & beta_Y_val == 0 ~ "DAG_b_val",
-    beta_x1_val == 0 & beta_x2_val != 0 & beta_Y_val == 0 ~ "DAG_c_val", 
-    beta_x1_val != 0 & beta_x2_val != 0 & beta_Y_val == 0 ~ "DAG_d_val",
-    beta_x1_val == 0 & beta_x2_val != 0 & beta_Y_val != 0 ~ "DAG_e_val",
-    beta_x1_val != 0 & beta_x2_val != 0 & beta_Y_val != 0 ~ "DAG_f_val",
+  beta_cases_deployment = dplyr::case_when(
+    beta_x1_deployment == 0 & beta_x2_deployment == 0 & beta_Y_deployment == 0 ~ "DAG_b_deployment",
+    beta_x1_deployment == 0 & beta_x2_deployment != 0 & beta_Y_deployment == 0 ~ "DAG_c_deployment", 
+    beta_x1_deployment != 0 & beta_x2_deployment != 0 & beta_Y_deployment == 0 ~ "DAG_d_deployment",
+    beta_x1_deployment == 0 & beta_x2_deployment != 0 & beta_Y_deployment != 0 ~ "DAG_e_deployment",
+    beta_x1_deployment != 0 & beta_x2_deployment != 0 & beta_Y_deployment != 0 ~ "DAG_f_deployment",
     TRUE ~ as.character("not_applicable")
   )) %>% 
   dplyr::filter(beta_cases_dev != "not_applicable" & 
-                  beta_cases_val != "not_applicable") %>%
-  dplyr::select(-beta_cases_dev,
-                -beta_cases_val)
+                  beta_cases_deployment != "not_applicable") 
 
 taskid <- commandArgs(trailingOnly = T) 
 taskid <- as.numeric(taskid)
@@ -61,6 +60,7 @@ n_rep <- 100
 #Define the size of development, validation and implementation, respectively:
 N_dev <- 100000
 N_val <- 100000 
+N_deployment <- 100000 
 
 set.seed(465475 * taskid)
 
@@ -68,15 +68,17 @@ set.seed(465475 * taskid)
 simulation_results <- simulation_nrun_fnc(n_iter = n_rep, 
                                           N_dev = N_dev,
                                           N_val = N_val, 
+                                          N_deployment = N_deployment,
                                           Y_prev = sims_parameters$Y_prev[taskid],
                                           X_categorical = sims_parameters$X_categorical[taskid], 
-                                          R_prev = sims_parameters$R_prev[taskid],
+                                          R_prev_dev = sims_parameters$R_prev_dev[taskid],
+                                          R_prev_deployment = sims_parameters$R_prev_deployment[taskid],
                                           beta_x1_dev = sims_parameters$beta_x1_dev[taskid], 
                                           beta_x2_dev = sims_parameters$beta_x2_dev[taskid], 
                                           beta_Y_dev = sims_parameters$beta_Y_dev[taskid], 
-                                          beta_x1_val = sims_parameters$beta_x1_val[taskid], 
-                                          beta_x2_val = sims_parameters$beta_x2_val[taskid],  
-                                          beta_Y_val = sims_parameters$beta_Y_val[taskid], 
+                                          beta_x1_deployment = sims_parameters$beta_x1_deployment[taskid], 
+                                          beta_x2_deployment = sims_parameters$beta_x2_deployment[taskid],  
+                                          beta_Y_deployment = sims_parameters$beta_Y_deployment[taskid], 
                                           rho_X = sims_parameters$rho_X[taskid],
                                           gamma_x1 = sims_parameters$gamma_x1[taskid], 
                                           gamma_x2 = sims_parameters$gamma_x2[taskid])
@@ -86,13 +88,14 @@ simulation_results <- simulation_results %>%
   dplyr::mutate("Simulation_Scenario" = taskid,
                 "Y_prev" = sims_parameters$Y_prev[taskid],
                 "X_categorical" = sims_parameters$X_categorical[taskid], 
-                "R_prev" = sims_parameters$R_prev[taskid],
+                "R_prev_dev" = sims_parameters$R_prev_dev[taskid],
+                "R_prev_deployment" = sims_parameters$R_prev_deployment[taskid],
                 "beta_x1_dev" = sims_parameters$beta_x1_dev[taskid], 
                 "beta_x2_dev" = sims_parameters$beta_x2_dev[taskid], 
                 "beta_Y_dev" = sims_parameters$beta_Y_dev[taskid], 
-                "beta_x1_val" = sims_parameters$beta_x1_val[taskid], 
-                "beta_x2_val" = sims_parameters$beta_x2_val[taskid],  
-                "beta_Y_val" = sims_parameters$beta_Y_val[taskid], 
+                "beta_x1_deployment" = sims_parameters$beta_x1_deployment[taskid], 
+                "beta_x2_deployment" = sims_parameters$beta_x2_deployment[taskid],  
+                "beta_Y_deployment" = sims_parameters$beta_Y_deployment[taskid], 
                 "rho_X" = sims_parameters$rho_X[taskid],
                 "gamma_x1" = sims_parameters$gamma_x1[taskid], 
                 "gamma_x2" = sims_parameters$gamma_x2[taskid],
