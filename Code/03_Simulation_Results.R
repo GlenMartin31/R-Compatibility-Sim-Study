@@ -565,8 +565,8 @@ model_degrdation_fnc <- function(df,
         
         Performance_Metric == "AUC" ~ 
           scale_x_continuous(
-            limits = c(-0.04, 0.04),
-            breaks = seq(-0.04, 0.04, by = 0.01)),
+            limits = c(-0.05, 0.05),
+            breaks = seq(-0.05, 0.05, by = 0.01)),
         
         Performance_Metric == "Brier Score" ~
           scale_x_continuous(
@@ -1045,8 +1045,8 @@ model_bias_fnc <- function(df,
         
         Performance_Metric == "AUC" ~ 
           scale_x_continuous(
-            limits = c(-0.04, 0.04),
-            breaks = seq(-0.04, 0.04, by = 0.01)),
+            limits = c(-0.05, 0.05),
+            breaks = seq(-0.05, 0.05, by = 0.01)),
         
         Performance_Metric == "Brier Score" ~
           scale_x_continuous(
@@ -1069,7 +1069,7 @@ absolute_performance_fnc(df = simulation_results_summarised,
                          X_categorical_value = FALSE, 
                          R_prev_dev_value = 0.5, 
                          R_prev_deployment_value = 0.5, 
-                         rho_X_value = 0.75,
+                         rho_X_value = 0,
                          gamma_x1_value = 0.5,
                          performance_metric_to_plot = "Calibration Intercept")
 model_degrdation_fnc(df = simulation_results_summarised,
@@ -1077,14 +1077,14 @@ model_degrdation_fnc(df = simulation_results_summarised,
                      X_categorical_value = FALSE, 
                      R_prev_dev_value = 0.5, 
                      R_prev_deployment_value = 0.5, 
-                     rho_X_value = 0.75,
+                     rho_X_value = 0,
                      gamma_x1_value = 0.5)
 model_bias_fnc(df = simulation_results_summarised,
                DAG_Scenario = "DAG (b) Dev -\n DAG (b) Deployment",
                X_categorical_value = FALSE, 
                R_prev_dev_value = 0.5, 
                R_prev_deployment_value = 0.5, 
-               rho_X_value = 0.75,
+               rho_X_value = 0,
                gamma_x1_value = 0.5)
 
 
@@ -1093,14 +1093,14 @@ model_degrdation_fnc(df = simulation_results_summarised,
                      X_categorical_value = FALSE, 
                      R_prev_dev_value = 0.5, 
                      R_prev_deployment_value = 0.5, 
-                     rho_X_value = 0.75,
+                     rho_X_value = 0,
                      gamma_x1_value = 0.5)
 model_bias_fnc(df = simulation_results_summarised,
                DAG_Scenario = "DAG (c) Dev -\n DAG (c) Deployment",
                X_categorical_value = FALSE, 
                R_prev_dev_value = 0.5, 
                R_prev_deployment_value = 0.5, 
-               rho_X_value = 0.75,
+               rho_X_value = 0,
                gamma_x1_value = 0.5)
 
 
@@ -1109,14 +1109,14 @@ model_degrdation_fnc(df = simulation_results_summarised,
                      X_categorical_value = FALSE, 
                      R_prev_dev_value = 0.5, 
                      R_prev_deployment_value = 0.5, 
-                     rho_X_value = 0.75,
+                     rho_X_value = 0,
                      gamma_x1_value = 0.5)
 model_bias_fnc(df = simulation_results_summarised,
                DAG_Scenario = "DAG (d) Dev -\n DAG (d) Deployment",
                X_categorical_value = FALSE, 
                R_prev_dev_value = 0.5, 
                R_prev_deployment_value = 0.5, 
-               rho_X_value = 0.75,
+               rho_X_value = 0,
                gamma_x1_value = 0.5)
 
 
@@ -1125,14 +1125,14 @@ model_degrdation_fnc(df = simulation_results_summarised,
                      X_categorical_value = FALSE, 
                      R_prev_dev_value = 0.5, 
                      R_prev_deployment_value = 0.5, 
-                     rho_X_value = 0.75,
+                     rho_X_value = 0,
                      gamma_x1_value = 0.5)
 model_bias_fnc(df = simulation_results_summarised,
                DAG_Scenario = "DAG (e) Dev -\n DAG (e) Deployment",
                X_categorical_value = FALSE, 
                R_prev_dev_value = 0.5, 
                R_prev_deployment_value = 0.5, 
-               rho_X_value = 0.75,
+               rho_X_value = 0,
                gamma_x1_value = 0.5)
 
 
@@ -1141,32 +1141,32 @@ model_degrdation_fnc(df = simulation_results_summarised,
                      X_categorical_value = FALSE, 
                      R_prev_dev_value = 0.5, 
                      R_prev_deployment_value = 0.5, 
-                     rho_X_value = 0.75,
+                     rho_X_value = 0,
                      gamma_x1_value = 0.5)
 model_bias_fnc(df = simulation_results_summarised,
                DAG_Scenario = "DAG (f) Dev -\n DAG (f) Deployment",
                X_categorical_value = FALSE, 
                R_prev_dev_value = 0.5, 
                R_prev_deployment_value = 0.5, 
-               rho_X_value = 0.75,
+               rho_X_value = 0,
                gamma_x1_value = 0.5)
 
 
 ### Second look at cases with different missingness DAGs across development and validation
 
 model_degrdation_fnc(df = simulation_results_summarised,
-                     DAG_Scenario = "DAG (c) Dev -\n DAG (f) Deployment",
+                     DAG_Scenario = "DAG (b) Dev -\n DAG (f) Deployment",
                      X_categorical_value = FALSE, 
                      R_prev_dev_value = 0.5, 
                      R_prev_deployment_value = 0.5, 
-                     rho_X_value = 0.75,
+                     rho_X_value = 0,
                      gamma_x1_value = 0.5)
 model_bias_fnc(df = simulation_results_summarised,
-               DAG_Scenario = "DAG (c) Dev -\n DAG (f) Deployment",
+               DAG_Scenario = "DAG (b) Dev -\n DAG (f) Deployment",
                X_categorical_value = FALSE, 
                R_prev_dev_value = 0.5, 
                R_prev_deployment_value = 0.5, 
-               rho_X_value = 0.75,
+               rho_X_value = 0,
                gamma_x1_value = 0.5)
 
 
@@ -1175,12 +1175,12 @@ model_degrdation_fnc(df = simulation_results_summarised,
                      X_categorical_value = FALSE, 
                      R_prev_dev_value = 0.5, 
                      R_prev_deployment_value = 0.8, 
-                     rho_X_value = 0.75,
+                     rho_X_value = 0,
                      gamma_x1_value = 0.5)
 model_bias_fnc(df = simulation_results_summarised,
                DAG_Scenario = "DAG (c) Dev -\n DAG (c) Deployment",
                X_categorical_value = FALSE, 
                R_prev_dev_value = 0.5, 
                R_prev_deployment_value = 0.8, 
-               rho_X_value = 0.75,
+               rho_X_value = 0,
                gamma_x1_value = 0.5)
